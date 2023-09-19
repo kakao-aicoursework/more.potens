@@ -1,5 +1,6 @@
 """Welcome to Pynecone! This file outlines the steps to create a basic app."""
 
+
 # Import pynecone.
 import openai
 import os
@@ -8,9 +9,10 @@ from datetime import datetime
 import pynecone as pc
 from pynecone.base import Base
 
+from chatbot.langchain_model import generate_answer
 
 # openai.api_key = "<YOUR_OPENAI_API_KEY>"
-openai.api_key = open("apikey.txt", "r").read()
+os.environ["OPENAI_API_KEY"] = open("../apikey.txt", "r").read()
 
 parallel_example = {
     "한국어": ["오늘 날씨 어때", "딥러닝 기반의 AI기술이 인기를끌고 있다."],
@@ -56,8 +58,7 @@ def translate_text_using_chatgpt(text, src_lang, trg_lang) -> str:
                 ]
 
     # API 호출
-    response = openai.ChatCompletion.create(model="gpt-3.5-turbo",
-                                            messages=messages)
+    response = generate_answer(text)
     translated_text = response['choices'][0]['message']['content']
     # Return
     return translated_text
@@ -82,19 +83,19 @@ class State(pc.State):
     def output(self) -> str:
         if not self.text.strip():
             return "Translations will appear here."
-        translated = translate_text_using_chatgpt(
-            self.text, src_lang=self.src_lang, trg_lang=self.trg_lang)
+        translated = generate_answer(self.text)
         return translated
 
     def post(self):
+        pc.console_log(self.messages)
         self.messages = [
-            Message(
-                original_text=self.text,
-                text=self.output,
-                created_at=datetime.now().strftime("%B %d, %Y %I:%M %p"),
-                to_lang=self.trg_lang,
-            )
-        ] + self.messages
+                            Message(
+                                original_text=self.text,
+                                text=self.output,
+                                created_at=datetime.now().strftime("%B %d, %Y %I:%M %p"),
+                                to_lang=self.trg_lang,
+                            )
+                        ] + self.messages
 
 
 # Define views.
@@ -103,9 +104,9 @@ class State(pc.State):
 def header():
     """Basic instructions to get started."""
     return pc.box(
-        pc.text("Translator 🗺", font_size="2rem"),
+        pc.text("Kakao Developer Helper BOT 🗺", font_size="2rem"),
         pc.text(
-            "Translate things and post them as messages!",
+            "카카오싱크의 사용법에 대해 질문해보세요",
             margin_top="0.5rem",
             color="#666",
         ),
@@ -144,8 +145,16 @@ def message(message):
                 font_size="0.8rem",
                 color="#666",
             ),
+            pc.input(
+                placeholder="Text to translate",
+                on_blur=State.set_text,
+                margin_top="1rem",
+                border_color="#eaeaef"
+            ),
+            pc.button("질문하기", on_click=State.post, margin_top="1rem"),
             spacing="0.3rem",
             align_items="left",
+
         ),
         background_color="#f5f5f5",
         padding="1rem",
@@ -190,27 +199,13 @@ def index():
     return pc.container(
         header(),
         pc.input(
-            placeholder="Text to translate",
+            placeholder="카카오싱크에 대해 아무 거나 물어보세요",
             on_blur=State.set_text,
             margin_top="1rem",
             border_color="#eaeaef"
         ),
-        pc.select(
-            list(parallel_example.keys()),
-            value=State.src_lang,
-            placeholder="Select a language",
-            on_change=State.set_src_lang,
-            margin_top="1rem",
-        ),
-        pc.select(
-            list(parallel_example.keys()),
-            value=State.trg_lang,
-            placeholder="Select a language",
-            on_change=State.set_trg_lang,
-            margin_top="1rem",
-        ),
         output(),
-        pc.button("Post", on_click=State.post, margin_top="1rem"),
+        pc.button("질문하기", on_click=State.post, margin_top="1rem"),
         pc.vstack(
             pc.foreach(State.messages, message),
             margin_top="2rem",
@@ -224,5 +219,5 @@ def index():
 
 # Add state and page to the app.
 app = pc.App(state=State)
-app.add_page(index, title="Translator")
+app.add_page(index, title="Kakao Developer Helper BOT")
 app.compile()

@@ -1,10 +1,12 @@
 import pynecone as pc
 
-class TranslatorConfig(pc.Config):
+
+class ChatBotConfig(pc.Config):
     pass
 
-config = TranslatorConfig(
-    app_name="translator",
+
+config = ChatBotConfig(
+    app_name="chatbot",
     db_url="sqlite:///pynecone.db",
     env=pc.Env.DEV,
 )
