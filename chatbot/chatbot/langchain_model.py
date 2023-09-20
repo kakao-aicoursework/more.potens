@@ -7,6 +7,9 @@ from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
 
+# openai.api_key = "<YOUR_OPENAI_API_KEY>"
+os.environ["OPENAI_API_KEY"] = open("../apikey.txt", "r").read()
+
 CUR_DIR = os.path.dirname(os.path.abspath('chatbot'))
 PROJECT_DATA_KAKAOSYNC = os.path.join(CUR_DIR, "datas/project_data_kakaosync.txt")
 PROMPT_TEMPLATE = os.path.join(CUR_DIR, "datas/template_first.txt")
@@ -56,5 +59,5 @@ def generate_answer(question) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    question = "서비스에 카카오싱크를 도입하는 방법을 알려주세요."
-    pprint(generate_answer(question))
+    q = "서비스에 카카오싱크를 도입하는 방법을 알려주세요."
+    pprint(generate_answer(q))
