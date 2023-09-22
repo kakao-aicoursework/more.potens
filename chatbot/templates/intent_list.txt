@@ -1,0 +1,3 @@
+kakaosync: 카카오싱크와 관련된 질문
+kakaosocial: 카카오톡 소셜 API와 관련된 질문
+talkchannel: 카카오톡 채널 API와 관련된 질문

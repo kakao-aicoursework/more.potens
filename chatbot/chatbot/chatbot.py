@@ -1,6 +1,5 @@
 """Welcome to Pynecone! This file outlines the steps to create a basic app."""
-
-
+import os
 from datetime import datetime
 
 # Import pynecone.
@@ -8,6 +7,9 @@ import openai
 import pynecone as pc
 from chatbot.langchain_model import generate_answer
 from pynecone.base import Base
+
+
+os.environ["OPENAI_API_KEY"] = open("../apikey.txt", "r").read()
 
 parallel_example = {
     "한국어": ["오늘 날씨 어때", "딥러닝 기반의 AI기술이 인기를끌고 있다."],
@@ -60,18 +62,11 @@ class State(pc.State):
     text: str = ""
     messages: list[Message] = []
 
-    @pc.var
-    def output(self) -> str:
-        if not self.text.strip():
-            return ""
-        translated = generate_answer(self.text)
-        return translated
-
     def post(self):
         self.messages = self.messages + [
                             Message(
                                 original_text=self.text,
-                                text=self.output,
+                                text=generate_answer(self.text),
                                 created_at=datetime.now().strftime("%B %d, %Y %I:%M %p"),
                             )
                         ]
@@ -85,7 +80,7 @@ def header():
     return pc.box(
         pc.text("Kakao Developer Helper BOT 🗺", font_size="2rem"),
         pc.text(
-            "카카오싱크의 사용법에 대해 질문해보세요",
+            "카카오톡 소셜 API, 카카오톡 채널 API, 카카오싱크에 대한 질문에 답변해드립니다",
             margin_top="0.5rem",
             color="#666",
         ),
@@ -154,8 +149,8 @@ def index():
             align_items="left"
         ),
         pc.input(
-            placeholder="카카오싱크에 대해 아무 거나 물어보세요",
-            on_blur=State.set_text,
+            placeholder="카카오톡 소셜 API, 카카오톡 채널 API, 카카오싱크에 대한 질문에 답변해드립니다",
+            on_change=State.set_text,
             margin_top="1rem",
             border_color="#eaeaef"
         ),
