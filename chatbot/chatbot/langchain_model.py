@@ -2,14 +2,13 @@ import os
 from pprint import pprint
 
 from langchain import LLMChain, ConversationChain
-from langchain.chains import SequentialChain, ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory, FileChatMessageHistory
 from langchain.prompts import ChatPromptTemplate
 from langchain.vectorstores import Chroma
 
-CUR_DIR = os.path.dirname(os.getcwd()) + '/chatbot'
+CUR_DIR = os.path.dirname(os.getcwd())
 PROJECT_DATA_KAKAOSYNC = os.path.join(CUR_DIR, "datas/project_data_kakaosync.txt")
 PROMPT_TEMPLATE = os.path.join(CUR_DIR, "templates/template_with_embedding.txt")
 
@@ -23,12 +22,38 @@ TALK_CHANNEL_PROMPT = os.path.join(CUR_DIR, "templates/template_talkchannel.txt"
 CHROMA_PERSIST_DIR = os.path.join(CUR_DIR, "chroma-persist")
 CHROMA_COLLECTION_NAME = "dosu-bot"
 
+HISTORY_DIR = os.path.join(CUR_DIR, "chat_histories")
+
 
 def read_prompt_template(file_path: str) -> str:
     with open(file_path, "r") as f:
         prompt_template = f.read()
 
     return prompt_template
+
+
+def log_user_message(history: FileChatMessageHistory, user_message: str):
+    history.add_user_message(user_message)
+
+
+def log_bot_message(history: FileChatMessageHistory, bot_message: str):
+    history.add_ai_message(bot_message)
+
+
+def get_chat_history(conversation_id: str):
+    history = load_conversation_history(conversation_id)
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        input_key="user_message",
+        chat_memory=history,
+    )
+
+    return memory.buffer
+
+
+def load_conversation_history(conversation_id: str):
+    file_path = os.path.join(HISTORY_DIR, f"{conversation_id}.json")
+    return FileChatMessageHistory(file_path)
 
 
 def create_chain(llm, template_path, output_key):
@@ -42,18 +67,14 @@ def create_chain(llm, template_path, output_key):
     )
 
 
-def generate_answer(question) -> dict[str, str]:
+def generate_answer(question, conversation_id='me1024') -> dict[str, str]:
     llm = ChatOpenAI(temperature=0.1, max_tokens=1024, model="gpt-3.5-turbo-16k")
+    history_file = load_conversation_history(conversation_id)
 
     db = Chroma(
         persist_directory=CHROMA_PERSIST_DIR,
         embedding_function=OpenAIEmbeddings(),
         collection_name=CHROMA_COLLECTION_NAME,
-    )
-
-    memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=True
     )
 
     # 의도 체인 생성
@@ -67,6 +88,7 @@ def generate_answer(question) -> dict[str, str]:
         input=question,
         intent_list=read_prompt_template(INTENT_LIST),
         question=question,
+        chat_history=get_chat_history(conversation_id),
     )
 
     intent = parse_intent_chain.run(context)
@@ -102,6 +124,9 @@ def generate_answer(question) -> dict[str, str]:
         result = talk_channel_chain.run(context)
     else:
         result = default_chain.run(context["input"])
+
+    log_user_message(history_file, question)
+    log_bot_message(history_file, result)
 
     return result
 
