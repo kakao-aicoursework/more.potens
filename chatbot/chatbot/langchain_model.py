@@ -8,7 +8,7 @@ from langchain.memory import ConversationBufferMemory, FileChatMessageHistory
 from langchain.prompts import ChatPromptTemplate
 from langchain.vectorstores import Chroma
 
-CUR_DIR = os.path.dirname(os.getcwd())
+CUR_DIR = os.path.dirname(os.getcwd()) + "/chatbot"
 PROJECT_DATA_KAKAOSYNC = os.path.join(CUR_DIR, "datas/project_data_kakaosync.txt")
 PROMPT_TEMPLATE = os.path.join(CUR_DIR, "templates/template_with_embedding.txt")
 
